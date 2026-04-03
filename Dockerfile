@@ -17,4 +17,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # 6. Jalankan Uvicorn menggunakan skrip Python internal agar kebal dari error karakter Railway
-CMD ["python", "-c", "import os, uvicorn; uvicorn.run('main:app', host='0.0.0.0', port=int(os.environ.get('PORT', 8000)))"]
+CMD ["python", "main.py"]

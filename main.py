@@ -76,3 +76,9 @@ async def dashboard(request: Request):
         'diterima' : diterima,
         'ditolak'  : ditolak,
     })
+
+    if __name__ == '__main__':
+    import uvicorn
+    # Mengambil port dari Railway, atau gunakan 8000 jika kosong
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run("main:app", host="0.0.0.0", port=port)

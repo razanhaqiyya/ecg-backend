@@ -11,3 +11,4 @@ aiofiles
 jinja2
 sqlalchemy
 python-dotenv
+joblib

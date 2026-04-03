@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ECG Smart Door Lock — Dashboard</title>
+<meta http-equiv="refresh" content="10">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Arial, sans-serif; background: #0D1117; color: #E6EDF3; }
+  .header { background: #1F4E79; padding: 20px 32px;
+            display: flex; align-items: center; gap: 16px; }
+  .header h1 { font-size: 22px; color: #fff; }
+  .header p  { font-size: 13px; color: #90CAF9; margin-top: 4px; }
+  .stats { display: flex; gap: 16px; padding: 20px 32px; flex-wrap: wrap; }
+  .stat-box { background: #161B22; border: 1px solid #30363D;
+              border-radius: 10px; padding: 20px 28px; min-width: 160px; }
+  .stat-box .val { font-size: 36px; font-weight: bold; }
+  .stat-box .lbl { font-size: 13px; color: #8B949E; margin-top: 4px; }
+  .green { color: #3FB950; }
+  .red   { color: #F85149; }
+  .blue  { color: #58A6FF; }
+  .table-wrap { padding: 0 32px 32px; overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; background: #161B22;
+          border-radius: 10px; overflow: hidden; }
+  th { background: #1F4E79; padding: 12px 16px; text-align: left;
+       font-size: 13px; color: #90CAF9; }
+  td { padding: 11px 16px; font-size: 13px;
+       border-bottom: 1px solid #21262D; }
+  tr:hover td { background: #1C2128; }
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 12px;
+           font-size: 12px; font-weight: bold; }
+  .badge-buka   { background: #1A4731; color: #3FB950; }
+  .badge-tolak  { background: #3D1A1A; color: #F85149; }
+  .refresh-note { text-align: right; font-size: 11px; color: #8B949E;
+                  padding: 0 32px 12px; }
+</style>
+</head>
+<body>
+<div class="header">
+  <div>
+    <h1>🚪 ECG Smart Door Lock</h1>
+    <p>Security Laboratory — Universitas Telkom 2026 &nbsp;|&nbsp; Auto-refresh setiap 10 detik</p>
+  </div>
+</div>
+
+<div class="stats">
+  <div class="stat-box">
+    <div class="val blue">{{ total }}</div>
+    <div class="lbl">Total Percobaan</div>
+  </div>
+  <div class="stat-box">
+    <div class="val green">{{ diterima }}</div>
+    <div class="lbl">Akses Diterima</div>
+  </div>
+  <div class="stat-box">
+    <div class="val red">{{ ditolak }}</div>
+    <div class="lbl">Akses Ditolak</div>
+  </div>
+  <div class="stat-box">
+    {% if total > 0 %}
+    <div class="val green">{{ "%.1f"|format(diterima/total*100) }}%</div>
+    {% else %}
+    <div class="val blue">—</div>
+    {% endif %}
+    <div class="lbl">TAR (True Acceptance)</div>
+  </div>
+</div>
+
+<p class="refresh-note">50 percobaan terakhir</p>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr>
+      <th>Waktu</th>
+      <th>Nama</th>
+      <th>Keputusan</th>
+      <th>Confidence</th>
+      <th>Latency</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for log in logs %}
+    <tr>
+      <td>{{ log.waktu }}</td>
+      <td>{{ log.nama }}</td>
+      <td>
+        <span class="badge {{ 'badge-buka' if log.keputusan=='BUKA' else 'badge-tolak' }}">
+          {{ '✅ BUKA' if log.keputusan=='BUKA' else '❌ TOLAK' }}
+        </span>
+      </td>
+      <td>{{ log.confidence }}</td>
+      <td>{{ log.latency }}</td>
+    </tr>
+    {% endfor %}
+    {% if not logs %}
+    <tr><td colspan="5" style="text-align:center;color:#8B949E;padding:40px">
+      Belum ada data — menunggu koneksi ESP32...
+    </td></tr>
+    {% endif %}
+  </tbody>
+</table>
+</div>
+</body>
+</html>

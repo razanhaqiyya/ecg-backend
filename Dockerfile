@@ -1,7 +1,7 @@
 # 1. Gunakan OS Linux dengan Python 3.11 yang ringan & stabil
 FROM python:3.11-slim
 
-# 2. Paksa install komponen OS yang membandel (libgomp1 untuk LightGBM)
+# 2. Paksa install komponen OS (libgomp1 untuk LightGBM)
 RUN apt-get update && \
     apt-get install -y libgomp1 && \
     rm -rf /var/lib/apt/lists/*
@@ -16,8 +16,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 # 5. Salin seluruh sisa file kode
 COPY . .
 
-# 6. Beri tahu Railway secara eksplisit bahwa kita menggunakan Port 8000
-EXPOSE 8000
-
-# 7. Jalankan Uvicorn secara absolut di angka 8000
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+# 6. Jalankan Uvicorn (Format tanpa kurung siku agar $PORT otomatis terbaca oleh OS Docker)
+CMD uvicorn main:app --host 0.0.0.0 --port $PORT

@@ -13,8 +13,11 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# 5. Salin seluruh sisa file kode (main.py, folder models, templates, dll)
+# 5. Salin seluruh sisa file kode
 COPY . .
 
-# 6. Perintah mutlak untuk menyalakan server
-CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}"]
+# 6. Beri tahu Railway secara eksplisit bahwa kita menggunakan Port 8000
+EXPOSE 8000
+
+# 7. Jalankan Uvicorn secara absolut di angka 8000
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

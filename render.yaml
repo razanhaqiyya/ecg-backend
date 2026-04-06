@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: ecg-auth-backend
+    name: ecg-smart-door-lock
     env: python
     pythonVersion: "3.11.0"        
     buildCommand: pip install -r requirements.txt

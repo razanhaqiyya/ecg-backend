@@ -2,105 +2,575 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>ECG Smart Door Lock — Dashboard</title>
 <meta http-equiv="refresh" content="10">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
+  :root {
+    --bg        : #F7F8FA;
+    --surface   : #FFFFFF;
+    --border    : #E8EAF0;
+    --text-main : #1A1D23;
+    --text-sub  : #6B7280;
+    --text-hint : #9CA3AF;
+    --primary   : #2563EB;
+    --primary-lt: #EFF6FF;
+    --green     : #16A34A;
+    --green-lt  : #F0FDF4;
+    --red       : #DC2626;
+    --red-lt    : #FEF2F2;
+    --gold      : #D97706;
+    --gold-lt   : #FFFBEB;
+    --radius    : 14px;
+    --radius-sm : 8px;
+    --shadow    : 0 1px 3px rgba(0,0,0,0.07), 0 4px 16px rgba(0,0,0,0.04);
+    --shadow-sm : 0 1px 2px rgba(0,0,0,0.06);
+  }
+
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: Arial, sans-serif; background: #0D1117; color: #E6EDF3; }
-  .header { background: #1F4E79; padding: 20px 32px;
-            display: flex; align-items: center; gap: 16px; }
-  .header h1 { font-size: 22px; color: #fff; }
-  .header p  { font-size: 13px; color: #90CAF9; margin-top: 4px; }
-  .stats { display: flex; gap: 16px; padding: 20px 32px; flex-wrap: wrap; }
-  .stat-box { background: #161B22; border: 1px solid #30363D;
-              border-radius: 10px; padding: 20px 28px; min-width: 160px; }
-  .stat-box .val { font-size: 36px; font-weight: bold; }
-  .stat-box .lbl { font-size: 13px; color: #8B949E; margin-top: 4px; }
-  .green { color: #3FB950; }
-  .red   { color: #F85149; }
-  .blue  { color: #58A6FF; }
-  .table-wrap { padding: 0 32px 32px; overflow-x: auto; }
-  table { width: 100%; border-collapse: collapse; background: #161B22;
-          border-radius: 10px; overflow: hidden; }
-  th { background: #1F4E79; padding: 12px 16px; text-align: left;
-       font-size: 13px; color: #90CAF9; }
-  td { padding: 11px 16px; font-size: 13px;
-       border-bottom: 1px solid #21262D; }
-  tr:hover td { background: #1C2128; }
-  .badge { display: inline-block; padding: 3px 10px; border-radius: 12px;
-           font-size: 12px; font-weight: bold; }
-  .badge-buka   { background: #1A4731; color: #3FB950; }
-  .badge-tolak  { background: #3D1A1A; color: #F85149; }
-  .refresh-note { text-align: right; font-size: 11px; color: #8B949E;
-                  padding: 0 32px 12px; }
+  body {
+    font-family: -apple-system, 'Segoe UI', Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text-main);
+    min-height: 100vh;
+    font-size: 14px;
+  }
+
+  /* ── TOPBAR ── */
+  .topbar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  .topbar-left { display: flex; align-items: center; gap: 12px; }
+  .logo-box {
+    width: 36px; height: 36px;
+    background: var(--primary);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+  .topbar h1 { font-size: 16px; font-weight: 600; color: var(--text-main); }
+  .topbar .sub { font-size: 12px; color: var(--text-sub); margin-top: 1px; }
+  .topbar-right { display: flex; align-items: center; gap: 12px; }
+  .badge-online {
+    display: flex; align-items: center; gap: 6px;
+    background: var(--green-lt);
+    color: var(--green);
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .badge-online::before {
+    content: '';
+    width: 7px; height: 7px;
+    background: var(--green);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.4; }
+  }
+  .refresh-badge {
+    font-size: 11px;
+    color: var(--text-hint);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    padding: 4px 10px;
+    border-radius: 20px;
+  }
+
+  /* ── LAYOUT ── */
+  .main { max-width: 1280px; margin: 0 auto; padding: 28px 32px; }
+
+  .page-title { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+  .page-sub   { font-size: 13px; color: var(--text-sub); margin-bottom: 24px; }
+
+  /* ── STAT CARDS ── */
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+
+  .stat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 22px;
+    box-shadow: var(--shadow-sm);
+    position: relative;
+    overflow: hidden;
+  }
+  .stat::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 3px;
+  }
+  .stat-blue::before   { background: var(--primary); }
+  .stat-green::before  { background: var(--green); }
+  .stat-red::before    { background: var(--red); }
+  .stat-gold::before   { background: var(--gold); }
+
+  .stat-icon {
+    width: 38px; height: 38px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    margin-bottom: 14px;
+  }
+  .icon-blue  { background: var(--primary-lt); }
+  .icon-green { background: var(--green-lt); }
+  .icon-red   { background: var(--red-lt); }
+  .icon-gold  { background: var(--gold-lt); }
+
+  .stat-val {
+    font-size: 30px;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 5px;
+  }
+  .c-blue  { color: var(--primary); }
+  .c-green { color: var(--green); }
+  .c-red   { color: var(--red); }
+  .c-gold  { color: var(--gold); }
+
+  .stat-label { font-size: 12px; color: var(--text-sub); font-weight: 500; }
+
+  /* ── GRID 2 COL ── */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+
+  /* ── CARD ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+  }
+  .card-header {
+    padding: 18px 22px 14px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .card-title { font-size: 14px; font-weight: 600; }
+  .card-sub   { font-size: 12px; color: var(--text-sub); margin-top: 2px; }
+  .card-body  { padding: 18px 22px; }
+
+  /* ── CHART ── */
+  .chart-wrap { position: relative; height: 200px; }
+
+  /* ── TABLE ── */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    padding: 11px 16px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-sub);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  tbody td {
+    padding: 13px 16px;
+    font-size: 13px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover td { background: #FAFBFF; }
+
+  /* ── PILLS ── */
+  .pill {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .pill-buka  { background: var(--green-lt); color: var(--green); }
+  .pill-tolak { background: var(--red-lt);   color: var(--red); }
+  .pill-buka::before  { content:''; width:6px; height:6px; background:var(--green); border-radius:50%; }
+  .pill-tolak::before { content:''; width:6px; height:6px; background:var(--red);   border-radius:50%; }
+
+  /* ── CONFIDENCE BAR ── */
+  .conf-wrap { display: flex; align-items: center; gap: 8px; }
+  .conf-track {
+    flex: 1; height: 5px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+    max-width: 80px;
+  }
+  .conf-fill { height: 100%; border-radius: 3px; }
+  .conf-num  { font-size: 12px; color: var(--text-sub); min-width: 36px; }
+
+  /* ── EMPTY STATE ── */
+  .empty-state {
+    text-align: center;
+    padding: 52px 20px;
+  }
+  .empty-icon { font-size: 36px; margin-bottom: 12px; }
+  .empty-text { color: var(--text-sub); font-size: 13px; }
+
+  /* ── AVATAR ── */
+  .avatar {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: var(--primary-lt);
+    color: var(--primary);
+    font-size: 11px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 8px;
+    flex-shrink: 0;
+  }
+  .name-cell { display: flex; align-items: center; }
+
+  /* ── SECTION HEADER ── */
+  .section-hdr {
+    display: flex; align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .section-hdr h2 { font-size: 16px; font-weight: 600; }
+  .count-badge {
+    background: var(--primary-lt);
+    color: var(--primary);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 20px;
+  }
+
+  /* ── RECENT LIST ── */
+  .recent-item {
+    display: flex; align-items: center;
+    gap: 12px; padding: 11px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .recent-item:last-child { border-bottom: none; }
+  .recent-time { font-size: 11px; color: var(--text-hint); min-width: 70px; }
+  .recent-name { font-size: 13px; font-weight: 500; flex: 1; }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 900px) {
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .grid-2 { grid-template-columns: 1fr; }
+    .main { padding: 20px 16px; }
+  }
+  @media (max-width: 500px) {
+    .stats { grid-template-columns: 1fr 1fr; }
+  }
 </style>
 </head>
 <body>
-<div class="header">
-  <div>
-    <h1>🚪 ECG Smart Door Lock</h1>
-    <p>Security Laboratory — Universitas Telkom 2026 &nbsp;|&nbsp; Auto-refresh setiap 10 detik</p>
-  </div>
-</div>
 
-<div class="stats">
-  <div class="stat-box">
-    <div class="val blue">{{ total }}</div>
-    <div class="lbl">Total Percobaan</div>
+<!-- TOPBAR -->
+<header class="topbar">
+  <div class="topbar-left">
+    <div>
+      <div class="topbar h1" style="font-size:15px;font-weight:600">ECG Smart Door Lock</div>
+      <div class="sub">Security Laboratory — Universitas Telkom 2026</div>
+    </div>
   </div>
-  <div class="stat-box">
-    <div class="val green">{{ diterima }}</div>
-    <div class="lbl">Akses Diterima</div>
+  <div class="topbar-right">
+    <span class="refresh-badge">Auto-refresh 10s</span>
+    <span class="badge-online">Online</span>
   </div>
-  <div class="stat-box">
-    <div class="val red">{{ ditolak }}</div>
-    <div class="lbl">Akses Ditolak</div>
-  </div>
-  <div class="stat-box">
-    {% if total > 0 %}
-    <div class="val green">{{ "%.1f"|format(diterima/total*100) }}%</div>
-    {% else %}
-    <div class="val blue">—</div>
-    {% endif %}
-    <div class="lbl">TAR (True Acceptance)</div>
-  </div>
-</div>
+</header>
 
-<p class="refresh-note">50 percobaan terakhir</p>
+<!-- MAIN -->
+<main class="main">
 
-<div class="table-wrap">
-<table>
-  <thead>
-    <tr>
-      <th>Waktu</th>
-      <th>Nama</th>
-      <th>Keputusan</th>
-      <th>Confidence</th>
-      <th>Latency</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for log in logs %}
-    <tr>
-      <td>{{ log.waktu }}</td>
-      <td>{{ log.nama }}</td>
-      <td>
-        <span class="badge {{ 'badge-buka' if log.keputusan=='BUKA' else 'badge-tolak' }}">
-          {{ '✅ BUKA' if log.keputusan=='BUKA' else '❌ TOLAK' }}
-        </span>
-      </td>
-      <td>{{ log.confidence }}</td>
-      <td>{{ log.latency }}</td>
-    </tr>
-    {% endfor %}
-    {% if not logs %}
-    <tr><td colspan="5" style="text-align:center;color:#8B949E;padding:40px">
-      Belum ada data — menunggu koneksi ESP32...
-    </td></tr>
-    {% endif %}
-  </tbody>
-</table>
-</div>
+  <div class="page-title">Dashboard Monitoring</div>
+  <div class="page-sub">Sistem Autentikasi Biometrik ECG — Ringkasan aktivitas akses pintu</div>
+
+  <!-- STAT CARDS -->
+  <div class="stats">
+    <div class="stat stat-blue">
+      <div class="stat-val c-blue">{{ total }}</div>
+      <div class="stat-label">Total Percobaan</div>
+    </div>
+    <div class="stat stat-green">
+      <div class="stat-val c-green">{{ diterima }}</div>
+      <div class="stat-label">Akses Diterima</div>
+    </div>
+    <div class="stat stat-red">
+      <div class="stat-val c-red">{{ ditolak }}</div>
+      <div class="stat-label">Akses Ditolak</div>
+    </div>
+    <div class="stat stat-gold">
+      <div class="stat-val c-gold">{{ tar }}</div>
+      <div class="stat-label">True Acceptance Rate</div>
+    </div>
+  </div>
+
+  <!-- GRID 2 COL: Chart + Recent -->
+  <div class="grid-2">
+
+    <!-- Bar Chart -->
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Statistik Akses</div>
+          <div class="card-sub">Perbandingan diterima vs ditolak</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="chart-wrap">
+          <canvas id="barChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Donut Chart -->
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Distribusi Keputusan</div>
+          <div class="card-sub">Proporsi BUKA vs TOLAK</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="chart-wrap">
+          <canvas id="donutChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- TABLE -->
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <div class="card-title">Riwayat Akses</div>
+        <div class="card-sub">50 percobaan terakhir</div>
+      </div>
+      <span class="count-badge">{{ total }} total</span>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Waktu</th>
+            <th>Nama</th>
+            <th>Keputusan</th>
+            <th>Confidence</th>
+            <th>Latency</th>
+            <th>IP Device</th>
+            <th>Keterangan</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if logs %}
+            {% for log in logs %}
+            <tr>
+              <td style="color:var(--text-hint);font-size:12px">{{ loop.index }}</td>
+              <td style="color:var(--text-sub);white-space:nowrap;font-size:12px">{{ log.waktu }}</td>
+              <td>
+                <div class="name-cell">
+                  <span class="avatar">{{ log.nama[:2]|upper }}</span>
+                  <span style="font-weight:500">{{ log.nama }}</span>
+                </div>
+              </td>
+              <td>
+                <span class="pill {{ 'pill-buka' if log.keputusan=='BUKA' else 'pill-tolak' }}">
+                  {{ 'BUKA' if log.keputusan=='BUKA' else 'TOLAK' }}
+                </span>
+              </td>
+              <td>
+                <div class="conf-wrap">
+                  <div class="conf-track">
+                    <div class="conf-fill"
+                         style="width:{{ log.confidence|replace('%','')|float }}%;
+                                background:{{ 'var(--green)' if log.keputusan=='BUKA' else 'var(--red)' }}">
+                    </div>
+                  </div>
+                  <span class="conf-num">{{ log.confidence }}</span>
+                </div>
+              </td>
+              <td style="color:var(--text-sub)">{{ log.latency }}</td>
+              <td style="color:var(--text-hint);font-size:12px">{{ log.ip }}</td>
+              <td style="color:var(--text-hint);font-size:12px;max-width:180px;
+                         overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+                {{ log.keterangan }}
+              </td>
+            </tr>
+            {% endfor %}
+          {% else %}
+            <tr>
+              <td colspan="8">
+                <div class="empty-state">
+                  <div class="empty-icon">📡</div>
+                  <div class="empty-text">Belum ada data — menunggu koneksi dari ESP32...</div>
+                </div>
+              </td>
+            </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</main>
+
+<script>
+// ── Data dari backend ─────────────────────────────────────────
+const totalVal    = {{ total }};
+const diterimaVal = {{ diterima }};
+const ditolakVal  = {{ ditolak }};
+
+// ── Bar Chart ─────────────────────────────────────────────────
+const barCtx = document.getElementById('barChart').getContext('2d');
+new Chart(barCtx, {
+  type: 'bar',
+  data: {
+    labels: ['Total', 'Diterima', 'Ditolak'],
+    datasets: [{
+      data: [totalVal, diterimaVal, ditolakVal],
+      backgroundColor: [
+        'rgba(37, 99, 235, 0.15)',
+        'rgba(22, 163, 74, 0.15)',
+        'rgba(220, 38, 38, 0.15)',
+      ],
+      borderColor: [
+        'rgba(37, 99, 235, 0.8)',
+        'rgba(22, 163, 74, 0.8)',
+        'rgba(220, 38, 38, 0.8)',
+      ],
+      borderWidth: 2,
+      borderRadius: 8,
+      borderSkipped: false,
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: '#fff',
+        titleColor: '#1A1D23',
+        bodyColor: '#6B7280',
+        borderColor: '#E8EAF0',
+        borderWidth: 1,
+        padding: 10,
+        cornerRadius: 8,
+        callbacks: {
+          label: ctx => ` ${ctx.parsed.y} percobaan`
+        }
+      }
+    },
+    scales: {
+      x: {
+        grid: { display: false },
+        border: { display: false },
+        ticks: { color: '#9CA3AF', font: { size: 12 } }
+      },
+      y: {
+        grid: { color: '#F3F4F6', lineWidth: 1 },
+        border: { display: false, dash: [4, 4] },
+        ticks: {
+          color: '#9CA3AF', font: { size: 11 },
+          stepSize: 1,
+          callback: v => Number.isInteger(v) ? v : ''
+        },
+        beginAtZero: true
+      }
+    }
+  }
+});
+
+// ── Donut Chart ───────────────────────────────────────────────
+const donutCtx = document.getElementById('donutChart').getContext('2d');
+
+if (totalVal === 0) {
+  // Tampilkan placeholder jika belum ada data
+  new Chart(donutCtx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Belum ada data'],
+      datasets: [{ data: [1], backgroundColor: ['#F3F4F6'], borderWidth: 0 }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { enabled: false } },
+      cutout: '65%'
+    }
+  });
+} else {
+  new Chart(donutCtx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Diterima', 'Ditolak'],
+      datasets: [{
+        data: [diterimaVal, ditolakVal],
+        backgroundColor: [
+          'rgba(22, 163, 74, 0.85)',
+          'rgba(220, 38, 38, 0.85)',
+        ],
+        borderColor: ['#fff', '#fff'],
+        borderWidth: 3,
+        hoverOffset: 6,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '65%',
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: {
+            color: '#6B7280',
+            font: { size: 12 },
+            padding: 16,
+            usePointStyle: true,
+            pointStyleWidth: 8,
+          }
+        },
+        tooltip: {
+          backgroundColor: '#fff',
+          titleColor: '#1A1D23',
+          bodyColor: '#6B7280',
+          borderColor: '#E8EAF0',
+          borderWidth: 1,
+          padding: 10,
+          cornerRadius: 8,
+          callbacks: {
+            label: ctx => {
+              const pct = totalVal > 0
+                ? ((ctx.parsed / totalVal) * 100).toFixed(1)
+                : 0;
+              return ` ${ctx.parsed} (${pct}%)`;
+            }
+          }
+        }
+      }
+    }
+  });
+}
+</script>
+
 </body>
 </html>

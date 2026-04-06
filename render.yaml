@@ -1,0 +1,11 @@
+# Tambahkan pythonVersion agar Render pakai Python 3.11
+services:
+  - type: web
+    name: ecg-smart-door-lock
+    env: python
+    pythonVersion: "3.11.0"        # ← tambahkan ini
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: DEBUG
+        value: false

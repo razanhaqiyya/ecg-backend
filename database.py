@@ -75,3 +75,12 @@ def ambil_statistik():
                 'ditolak': total - diterima}
     finally:
         sess.close()
+    
+def hapus_semua_log():
+    sess = Session()
+    try:
+        # Menghapus seluruh baris di dalam tabel LogAkses
+        sess.query(LogAkses).delete()
+        sess.commit()
+    finally:
+        sess.close()

@@ -1,6 +1,3 @@
-# main.py — FastAPI server utama
-# Jalankan: uvicorn main:app --reload
-
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
@@ -10,7 +7,7 @@ from datetime import datetime
 import time, os
 from dotenv import load_dotenv
 
-from database import simpan_log, ambil_log, ambil_statistik
+from database import simpan_log, ambil_log, ambil_statistik, hapus_semua_log
 from ml_placeholder import proses_autentikasi
 
 load_dotenv()
@@ -26,16 +23,13 @@ templates = Jinja2Templates(
 )
 
 
-# ── Schema request dari ESP32 ─────────────────────────────────
+#Skema request dari ESP32
 class ECGRequest(BaseModel):
     sinyal    : List[float]       # array nilai ADC dari Arduino
     fs        : int   = 360       # sampling rate Arduino (Hz)
     device_id : str   = 'ESP32'   # identitas perangkat
 
-
-# ══════════════════════════════════════════════════════════════
-#  ENDPOINT 1: Autentikasi ECG — dipanggil ESP32
-# ══════════════════════════════════════════════════════════════
+#ENDPOINT 1: Autentikasi ECG
 @app.post('/auth')
 async def autentikasi(request: Request, data: ECGRequest):
     """
@@ -45,12 +39,12 @@ async def autentikasi(request: Request, data: ECGRequest):
     t_start  = time.time()
     ip_device = request.client.host
 
-    # Proses autentikasi (placeholder atau ML asli)
+    #Proses autentikasi
     hasil    = proses_autentikasi(data.sinyal, fs_asal=data.fs)
 
     latency  = round((time.time() - t_start) * 1000, 2)
 
-    # Simpan ke database
+    #Simpan ke database
     simpan_log(
         nama        = hasil['nama'],
         keputusan   = hasil['keputusan'],
@@ -77,10 +71,7 @@ async def autentikasi(request: Request, data: ECGRequest):
         'timestamp'  : datetime.now().isoformat()
     }
 
-
-# ══════════════════════════════════════════════════════════════
 #  ENDPOINT 2: Health check — ESP32 ping dulu sebelum kirim data
-# ══════════════════════════════════════════════════════════════
 @app.get('/ping')
 async def ping():
     return {
@@ -89,10 +80,7 @@ async def ping():
         'model_ready': False   # ganti True setelah model diupload
     }
 
-
-# ══════════════════════════════════════════════════════════════
 #  ENDPOINT 3: Dashboard web monitoring
-# ══════════════════════════════════════════════════════════════
 @app.get('/', response_class=HTMLResponse)
 async def dashboard(request: Request):
     logs  = ambil_log(limit=50)
@@ -118,10 +106,7 @@ async def dashboard(request: Request):
                      if stats['total'] > 0 else '—',
     })
 
-
-# ══════════════════════════════════════════════════════════════
 #  ENDPOINT 4: API data log (opsional — untuk integrasi lain)
-# ══════════════════════════════════════════════════════════════
 @app.get('/api/logs')
 async def api_logs(limit: int = 20):
     logs = ambil_log(limit=limit)
@@ -138,3 +123,9 @@ async def api_logs(limit: int = 20):
 @app.get('/api/stats')
 async def api_stats():
     return ambil_statistik()
+
+#  ENDPOINT 5: Hapus semua log
+@app.delete('/api/logs/clear')
+async def hapus_log():
+    hapus_semua_log()
+    return {"status": "sukses", "pesan": "Semua data log berhasil dihapus"}

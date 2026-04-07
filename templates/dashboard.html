@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ECG Smart Door Lock — Dashboard</title>
+<title>Dashboard ECG Smart Door Lock</title>
 <meta http-equiv="refresh" content="10">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
@@ -286,8 +286,7 @@
 <header class="topbar">
   <div class="topbar-left">
     <div>
-      <div class="topbar h1" style="font-size:15px;font-weight:600">ECG Smart Door Lock</div>
-      <div class="sub">Security Laboratory — Universitas Telkom 2026</div>
+      <div class="topbar h1" style="font-size:15px;font-weight:600">ECG Authentication</div>
     </div>
   </div>
   <div class="topbar-right">
@@ -300,7 +299,7 @@
 <main class="main">
 
   <div class="page-title">Dashboard Monitoring</div>
-  <div class="page-sub">Sistem Autentikasi Biometrik ECG — Ringkasan aktivitas akses pintu</div>
+  <div class="page-sub">Sistem Autentikasi Biometrik ECG</div>
 
   <!-- STAT CARDS -->
   <div class="stats">
@@ -434,12 +433,12 @@
 </main>
 
 <script>
-// ── Data dari backend ─────────────────────────────────────────
+// Data dari backend
 const totalVal    = {{ total }};
 const diterimaVal = {{ diterima }};
 const ditolakVal  = {{ ditolak }};
 
-// ── Bar Chart ─────────────────────────────────────────────────
+// Bar Chart
 const barCtx = document.getElementById('barChart').getContext('2d');
 new Chart(barCtx, {
   type: 'bar',
@@ -500,7 +499,7 @@ new Chart(barCtx, {
   }
 });
 
-// ── Donut Chart ───────────────────────────────────────────────
+// Donut Chart
 const donutCtx = document.getElementById('donutChart').getContext('2d');
 
 if (totalVal === 0) {

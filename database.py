@@ -1,20 +1,26 @@
-# database.py
-# Menyimpan setiap percobaan akses ke database SQLite
-# SQLite tidak perlu install apapun — sudah built-in Python
-
-from sqlalchemy import (create_engine, Column, Integer,
-                        String, Float, DateTime)
-from sqlalchemy.orm import declarative_base
-from sqlalchemy.orm import sessionmaker
+import os
+from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime
+from sqlalchemy.orm import declarative_base, sessionmaker
 from datetime import datetime
+from dotenv import load_dotenv
 
-Base    = declarative_base()
-engine  = create_engine(
-    'sqlite:///ecg_logs.db',
-    connect_args={'check_same_thread': False}
-)
+load_dotenv()
+
+# Mengambil URL dari .env (lokal) atau Environment Variable (Render)
+# Jika tidak ditemukan, default ke SQLite agar lokal tetap bisa jalan
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
+    # Fix untuk SQLAlchemy agar mengenali skema postgresql://
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+
+if not DATABASE_URL:
+    # Fallback ke SQLite jika sedang ngoding di laptop tanpa internet
+    DATABASE_URL = 'sqlite:///ecg_logs.db'
+
+Base = declarative_base()
+engine = create_engine(DATABASE_URL)
 Session = sessionmaker(bind=engine)
-
 
 class LogAkses(Base):
     """

@@ -1,6 +1,6 @@
 # 🫀 ECG Smart Door Lock Backend
 
-Sistem autentikasi biometrik berbasis sinyal ECG (Electrocardiogram) yang terintegrasi dengan perangkat keras ESP32 dan dashboard pemantauan real-time. Proyek ini dikembangkan sebagai bagian dari riset keamanan autentikasi di Telkom University.
+Sistem autentikasi biometrik berbasis sinyal ECG (Electrocardiogram) yang terintegrasi dengan perangkat keras Arduino nano dan ESP32 serta dashboard pemantauan real-time. Proyek ini dikembangkan sebagai bagian dari Research Group Autentikasi labotarium Security Labotary (SECULAB) di Telkom University.
 
 ---
 
@@ -24,5 +24,5 @@ Sistem autentikasi biometrik berbasis sinyal ECG (Electrocardiogram) yang terint
 ## 🛠️ Instalasi Lokal
 1. **Clone Repositori:**
    ```bash
-   git clone [https://github.com/razanhaqiyya/ecg_backend.git](https://github.com/razanhaqiyya/ecg_backend.git)
-   cd ecg_backend
+   git clone [https://github.com/razanhaqiyya/ecg-backend.git](https://github.com/razanhaqiyya/ecg-backend.git)
+   cd ecg-backend

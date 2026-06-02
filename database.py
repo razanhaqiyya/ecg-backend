@@ -13,7 +13,6 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Fungsi helper untuk mendapatkan waktu standar WIB (UTC + 7)
-# Ini memastikan waktu tetap akurat meskipun server Render berada di Amerika/Eropa
 def waktu_sekarang_wib():
     return datetime.utcnow() + timedelta(hours=7)
 
@@ -46,7 +45,7 @@ class LogAkses(Base):
     id          = Column(Integer, primary_key=True, autoincrement=True)
     waktu       = Column(DateTime, default=waktu_sekarang_wib)
     nama        = Column(String, default='Unknown')
-    keputusan   = Column(String)           # Berisi nilai: 'BUKA' atau 'TOLAK'
+    keputusan   = Column(String)               # Berisi nilai: 'BUKA' atau 'TOLAK'
     confidence  = Column(Float, default=0.0)   # Nilai probabilitas dari LightGBM
     latency_ms  = Column(Float, default=0.0)   # Kecepatan pemrosesan dalam milidetik
     ip_device   = Column(String, default='')   # IP Address dari ESP32 pengirim
@@ -56,20 +55,21 @@ class LogAkses(Base):
 Base.metadata.create_all(engine)
 
 
-def simpan_log(nama: str, keputusan: str, confidence: float = 0.0,
-               latency_ms: float = 0.0, ip_device: str = '', keterangan: str = ''):
+def simpan_log_akses(data_log: dict):
     """
     Menyimpan rekam jejak percobaan autentikasi baru ke database.
+    (Disinkronkan dengan dictionary dari main.py)
     """
     sess = Session()
     try:
         log = LogAkses(
-            nama        = nama,
-            keputusan   = keputusan,
-            confidence  = confidence,
-            latency_ms  = latency_ms,
-            ip_device   = ip_device,
-            keterangan  = keterangan
+            waktu       = data_log.get('waktu', waktu_sekarang_wib()),
+            nama        = data_log.get('nama', 'Unknown'),
+            keputusan   = data_log.get('keputusan', 'TOLAK'),
+            confidence  = data_log.get('confidence', 0.0),
+            latency_ms  = data_log.get('latency_ms', 0.0),
+            ip_device   = data_log.get('ip_device', ''),
+            keterangan  = data_log.get('keterangan', '')
         )
         sess.add(log)
         sess.commit()
@@ -87,7 +87,7 @@ def sample_log_palsu():
     pass
 
 
-def ambil_log(limit: int = 50):
+def ambil_semua_log(limit: int = 50):
     """
     Mengambil data riwayat akses terbaru untuk ditampilkan di tabel dashboard.
     """

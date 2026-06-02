@@ -280,7 +280,7 @@
   .badge { border: 2px solid var(--border); box-shadow: 2px 2px 0px var(--border); font-weight: 800; }
   .logo-box { border: 3px solid var(--border); box-shadow: 3px 3px 0px var(--border); }
 
-  /* ── GAYA TOMBOL RESET BARU ── */
+  /* ── GAYA TOMBOL RESET ── */
   .reset-container {
     display: flex;
     justify-content: center;
@@ -388,7 +388,7 @@
     <div class="card-header">
       <div>
         <div class="card-title">Riwayat Akses</div>
-        <div class="card-sub">50 percobaan terakhir</div>
+        <div class="card-sub">Percobaan terakhir</div>
       </div>
       <span class="count-badge">{{ total }} total</span>
     </div>
@@ -411,10 +411,10 @@
             {% for log in logs %}
             <tr>
               <td style="color:var(--text-hint);font-size:12px">{{ loop.index }}</td>
-              <td style="color:var(--text-sub);white-space:nowrap;font-size:12px">{{ log.waktu }}</td>
+              <td style="color:var(--text-sub);white-space:nowrap;font-size:12px">{{ log.waktu.strftime('%Y-%m-%d %H:%M:%S') if log.waktu.strftime else log.waktu }}</td>
               <td>
                 <div class="name-cell">
-                  <span class="avatar">{{ log.nama[:2]|upper }}</span>
+                  <span class="avatar">{{ log.nama[:2]|upper if log.nama else 'UN' }}</span>
                   <span style="font-weight:500">{{ log.nama }}</span>
                 </div>
               </td>
@@ -427,15 +427,15 @@
                 <div class="conf-wrap">
                   <div class="conf-track">
                     <div class="conf-fill"
-                         style="width:{{ log.confidence|replace('%','')|float }}%;
+                         style="width:{{ (log.confidence * 100) | round(1) }}%;
                                 background:{{ 'var(--green)' if log.keputusan=='BUKA' else 'var(--red)' }}">
                     </div>
                   </div>
-                  <span class="conf-num">{{ log.confidence }}</span>
+                  <span class="conf-num">{{ (log.confidence * 100) | round(1) }}%</span>
                 </div>
               </td>
-              <td style="color:var(--text-sub)">{{ log.latency }}</td>
-              <td style="color:var(--text-hint);font-size:12px">{{ log.ip }}</td>
+              <td style="color:var(--text-sub)">{{ log.latency_ms | round(1) if log.latency_ms else 0 }} ms</td>
+              <td style="color:var(--text-hint);font-size:12px">{{ log.ip_device }}</td>
               <td style="color:var(--text-hint);font-size:12px;max-width:180px;
                          overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
                 {{ log.keterangan }}
@@ -607,9 +607,6 @@ if (totalVal === 0) {
   });
 }
 
-// ==========================================
-// FUNGSI JAVASCRIPT UNTUK TOMBOL RESET
-// ==========================================
 function resetRiwayat() {
     let konfirmasi = confirm("⚠️ PERINGATAN: Apakah Anda yakin ingin menghapus SELURUH data riwayat akses? Tindakan ini tidak bisa dibatalkan.");
     

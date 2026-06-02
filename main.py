@@ -1,14 +1,13 @@
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import HTMLResponse
-from fastapi.templatetering import Jinja2Templates
+from fastapi.templating import Jinja2Templates # <-- TYPO SUDAH DIPERBAIKI DI SINI
 from pydantic import BaseModel
 from typing import List
 import datetime
 
-# Pastikan file database.py Anda sudah memiliki fungsi-fungsi ini
-from database import ambil_semua_log, simpan_log_akses, hapus_semua_log 
-# Pastikan file ml_pipeline.py sudah siap untuk memproses model PPG
-from ml_pipeline import prediksi_biometrik 
+# Impor dari file lokal Anda
+from database import ambil_semua_log, simpan_log_akses, hapus_semua_log
+from ml_pipeline import proses_autentikasi 
 
 app = FastAPI(title="PPG Biometric Authentication System")
 templates = Jinja2Templates(directory="templates")
@@ -27,7 +26,27 @@ async def halaman_dashboard(request: Request):
     """Menampilkan halaman utama monitoring log akses"""
     try:
         logs = ambil_semua_log()
-        return templates.TemplateResponse("dashboard.html", {"request": request, "logs": logs})
+        
+        # Menghitung statistik untuk dikirim ke Chart.js di frontend
+        total_akses = len(logs)
+        # Menyesuaikan akses dictionary/object berdasarkan format return database.py Anda
+        # Kita gunakan dict.get() jika logs adalah list of dicts, atau attribute jika list of objects
+        diterima = sum(1 for log in logs if (log['keputusan'] if isinstance(log, dict) else log.keputusan) == 'BUKA')
+        ditolak = total_akses - diterima
+        
+        if total_akses > 0:
+            tar_persen = f"{(diterima / total_akses) * 100:.1f}%"
+        else:
+            tar_persen = "0%"
+
+        return templates.TemplateResponse("dashboard.html", {
+            "request": request, 
+            "logs": logs,
+            "total": total_akses,
+            "diterima": diterima,
+            "ditolak": ditolak,
+            "tar": tar_persen
+        })
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Gagal memuat dashboard: {str(e)}")
 
@@ -41,23 +60,20 @@ async def otentikasi_perangkat(data: DataPPG, request: Request):
         raise HTTPException(status_code=400, detail="Jumlah data sinyal harus tepat 540")
         
     try:
-        # Jalankan ekstraksi fitur dan prediksi menggunakan model VGG16 + LightGBM
-        nama_prediksi, nilai_confidence = prediksi_biometrik(data.sinyal)
+        # Jalankan pipeline pemrosesan lengkap dari ml_pipeline.py
+        hasil = proses_autentikasi(data.sinyal)
         
-        # Hitung latensi pemrosesan dalam milidetik
+        # Hitung latensi
         waktu_selesai = datetime.datetime.now()
         latency = (waktu_selesai - waktu_mulai).total_seconds() * 1000
         
-        # Tentukan keputusan berdasarkan ambang batas akurasi (misal 75%)
-        if nilai_confidence >= 0.75 and nama_prediksi != "Unknown":
-            keputusan = "BUKA"
-            keterangan = f"Terverifikasi sebagai {nama_prediksi}"
-        else:
-            keputusan = "TOLAK"
-            nama_prediksi = "Unknown User"
-            keterangan = "Akurasi model di bawah ambang batas"
+        # Ambil data dari dictionary hasil ml_pipeline
+        keputusan = hasil['keputusan']
+        nama_prediksi = hasil['nama']
+        keterangan = hasil['keterangan']
+        nilai_confidence = hasil['confidence']
             
-        # Simpan hasil pemrosesan ke database Supabase / Lokal
+        # Simpan hasil pemrosesan ke database
         data_log = {
             "waktu": waktu_sekarang_wib(),
             "nama": nama_prediksi,
@@ -76,7 +92,7 @@ async def otentikasi_perangkat(data: DataPPG, request: Request):
 
 @app.delete("/reset-log")
 async def reset_log():
-    """Endpoint baru untuk mengosongkan seluruh isi tabel log_akses"""
+    """Endpoint untuk mengosongkan seluruh isi tabel log_akses"""
     try:
         hapus_semua_log()
         return {"status": "sukses", "pesan": "Seluruh riwayat akses berhasil dikosongkan!"}

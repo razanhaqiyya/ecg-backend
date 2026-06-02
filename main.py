@@ -1,87 +1,88 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import HTMLResponse
-from fastapi.templating import Jinja2Templates
+from fastapi.templatetering import Jinja2Templates
 from pydantic import BaseModel
 from typing import List
-import time, os
-from dotenv import load_dotenv
+import datetime
 
-from database import simpan_log, ambil_log, ambil_statistik
-# Mengimpor pipeline pemrosesan PPG yang baru
-from ml_pipeline import proses_autentikasi
+# Pastikan file database.py Anda sudah memiliki fungsi-fungsi ini
+from database import ambil_semua_log, simpan_log_akses, hapus_semua_log 
+# Pastikan file ml_pipeline.py sudah siap untuk memproses model PPG
+from ml_pipeline import prediksi_biometrik 
 
-load_dotenv()
+app = FastAPI(title="PPG Biometric Authentication System")
+templates = Jinja2Templates(directory="templates")
 
-app = FastAPI(
-    title       = 'PPG Smart Door Lock API',
-    description = 'Backend sistem autentikasi biometrik PPG berbasis MAX30102',
-    version     = '2.0.0'
-)
+# Skema data yang dikirim oleh ESP32
+class DataPPG(BaseModel):
+    sinyal: List[int]
+    fs: int
 
-templates = Jinja2Templates(
-    directory=os.path.join(os.path.dirname(__file__), 'templates')
-)
+def waktu_sekarang_wib():
+    """Mengembalikan waktu saat ini dalam format WIB (UTC+7)"""
+    return datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=7)))
 
-# Mengubah nama skema ke PPG dan menyesuaikan sampling rate dasar ke 100Hz
-class PPGRequest(BaseModel):
-    sinyal    : List[float]       # Array nilai IR Amplitude dari MAX30102
-    fs        : int   = 100       # Sampling rate sensor PPG (100 Hz)
-    device_id : str   = 'ESP32'   # Identitas perangkat IoT
+@app.get("/", response_class=HTMLResponse)
+async def halaman_dashboard(request: Request):
+    """Menampilkan halaman utama monitoring log akses"""
+    try:
+        logs = ambil_semua_log()
+        return templates.TemplateResponse("dashboard.html", {"request": request, "logs": logs})
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Gagal memuat dashboard: {str(e)}")
 
-@app.post('/auth')
-async def autentikasi(request: Request, data: PPGRequest):
-    """
-    Endpoint utama yang dipanggil oleh ESP32 dengan membawa data sinyal PPG jari.
-    Return: keputusan BUKA atau TOLAK untuk relay Solenoid.
-    """
-    t_start  = time.time()
-    ip_device = request.client.host
-
-    # 1. Jalankan pemrosesan sinyal pada pipeline ML PPG
-    hasil = proses_autentikasi(data.sinyal, fs_asal=data.fs)
+@app.post("/auth")
+async def otentikasi_perangkat(data: DataPPG, request: Request):
+    """Menerima 540 data sinyal dari ESP32 untuk diproses oleh AI"""
+    waktu_mulai = datetime.datetime.now()
+    ip_client = request.client.host
     
-    # 2. Hitung total waktu tunda pemrosesan (latency)
-    latency_ms = (time.time() - t_start) * 1000
+    if len(data.sinyal) != 540:
+        raise HTTPException(status_code=400, detail="Jumlah data sinyal harus tepat 540")
+        
+    try:
+        # Jalankan ekstraksi fitur dan prediksi menggunakan model VGG16 + LightGBM
+        nama_prediksi, nilai_confidence = prediksi_biometrik(data.sinyal)
+        
+        # Hitung latensi pemrosesan dalam milidetik
+        waktu_selesai = datetime.datetime.now()
+        latency = (waktu_selesai - waktu_mulai).total_seconds() * 1000
+        
+        # Tentukan keputusan berdasarkan ambang batas akurasi (misal 75%)
+        if nilai_confidence >= 0.75 and nama_prediksi != "Unknown":
+            keputusan = "BUKA"
+            keterangan = f"Terverifikasi sebagai {nama_prediksi}"
+        else:
+            keputusan = "TOLAK"
+            nama_prediksi = "Unknown User"
+            keterangan = "Akurasi model di bawah ambang batas"
+            
+        # Simpan hasil pemrosesan ke database Supabase / Lokal
+        data_log = {
+            "waktu": waktu_sekarang_wib(),
+            "nama": nama_prediksi,
+            "keputusan": keputusan,
+            "confidence": float(nilai_confidence),
+            "latency_ms": float(latency),
+            "ip_device": ip_client,
+            "keterangan": keterangan
+        }
+        simpan_log_akses(data_log)
+        
+        return {"status": keputusan, "user": nama_prediksi}
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error pemrosesan server: {str(e)}")
 
-    # 3. Simpan rekam jejak akses ke database Supabase secara asinkronus
-    simpan_log(
-        nama        = hasil['nama'],
-        keputusan   = hasil['keputusan'],
-        confidence  = hasil['confidence'],
-        latency_ms  = latency_ms,
-        ip_device   = ip_device,
-        keterangan  = hasil['keterangan']
-    )
+@app.delete("/reset-log")
+async def reset_log():
+    """Endpoint baru untuk mengosongkan seluruh isi tabel log_akses"""
+    try:
+        hapus_semua_log()
+        return {"status": "sukses", "pesan": "Seluruh riwayat akses berhasil dikosongkan!"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Gagal mereset data: {str(e)}")
 
-    # 4. Berikan respon balik ke ESP32 untuk aksi pada Solenoid
-    return {
-        'status'     : hasil['keputusan'],  # 'BUKA' atau 'TOLAK'
-        'user'       : hasil['nama'],
-        'confidence' : f"{hasil['confidence']:.1%}",
-        'latency_ms' : round(latency_ms, 2),
-        'keterangan' : hasil['keterangan']
-    }
-
-@app.get('/', response_class=HTMLResponse)
-async def dashboard(request: Request):
-    logs  = ambil_log(limit=50)
-    stats = ambil_statistik()
-
-    log_data = [{
-        'waktu'      : l.waktu.strftime('%d/%m/%Y %H:%M:%S'),
-        'nama'       : l.nama,
-        'keputusan'  : l.keputusan,
-        'confidence' : f"{l.confidence:.1%}",
-        'latency'    : f"{l.latency_ms:.0f} ms",
-        'ip'         : l.ip_device,
-        'keterangan' : l.keterangan
-    } for l in logs]
-
-    return templates.TemplateResponse('dashboard.html', {
-        'request'  : request,
-        'logs'     : log_data,
-        'total'    : stats['total'],
-        'diterima' : stats['diterima'],
-        'ditolak'  : stats['ditolak'],
-        'tar'      : f"{stats['diterima']/stats['total']*100:.1f}%" if stats['total'] > 0 else '—',
-    })
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

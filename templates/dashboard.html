@@ -262,16 +262,6 @@
     border-radius: 20px;
   }
 
-  /* ── RECENT LIST ── */
-  .recent-item {
-    display: flex; align-items: center;
-    gap: 12px; padding: 11px 0;
-    border-bottom: 3px solid var(--border);
-  }
-  .recent-item:last-child { border-bottom: none; }
-  .recent-time { font-size: 11px; color: var(--text-hint); min-width: 70px; }
-  .recent-name { font-size: 13px; font-weight: 800; flex: 1; }
-
   /* ── RESPONSIVE ── */
   @media (max-width: 900px) {
     .stats { grid-template-columns: repeat(2, 1fr); }
@@ -289,12 +279,43 @@
   tbody tr:hover { background: #E0F2FE; transform: scale(1.01); }
   .badge { border: 2px solid var(--border); box-shadow: 2px 2px 0px var(--border); font-weight: 800; }
   .logo-box { border: 3px solid var(--border); box-shadow: 3px 3px 0px var(--border); }
+
+  /* ── GAYA TOMBOL RESET BARU ── */
+  .reset-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 32px;
+  }
+  .btn-reset {
+    background: var(--red);
+    color: var(--surface);
+    border: 3px solid var(--border);
+    padding: 12px 24px;
+    border-radius: var(--radius-sm);
+    font-size: 15px;
+    font-weight: 800;
+    font-family: inherit;
+    cursor: pointer;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .btn-reset:hover {
+    transform: translateY(-2px);
+    box-shadow: 5px 5px 0px var(--border);
+    background: #ef4444;
+  }
+  .btn-reset:active {
+    transform: translateY(2px);
+    box-shadow: 1px 1px 0px var(--border);
+  }
 </style>
 
 </head>
 <body>
 
-<!-- TOPBAR -->
 <header class="topbar">
   <div class="topbar-left">
     <div>
@@ -307,13 +328,11 @@
   </div>
 </header>
 
-<!-- MAIN -->
 <main class="main">
 
   <div class="page-title">Dashboard Monitoring</div>
   <div class="page-sub">Sistem Autentikasi Biometrik PPG</div>
 
-  <!-- STAT CARDS -->
   <div class="stats">
     <div class="stat stat-blue">
       <div class="stat-val c-blue">{{ total }}</div>
@@ -333,10 +352,8 @@
     </div>
   </div>
 
-  <!-- GRID 2 COL: Chart + Recent -->
   <div class="grid-2">
 
-    <!-- Bar Chart -->
     <div class="card">
       <div class="card-header">
         <div>
@@ -351,7 +368,6 @@
       </div>
     </div>
 
-    <!-- Donut Chart -->
     <div class="card">
       <div class="card-header">
         <div>
@@ -368,7 +384,6 @@
 
   </div>
 
-  <!-- TABLE -->
   <div class="card">
     <div class="card-header">
       <div>
@@ -440,6 +455,16 @@
         </tbody>
       </table>
     </div>
+  </div>
+
+  <div class="reset-container">
+    <button onclick="resetRiwayat()" class="btn-reset">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 6h18"></path>
+        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+      </svg>
+      Kosongkan Semua Data
+    </button>
   </div>
 
 </main>
@@ -580,6 +605,32 @@ if (totalVal === 0) {
       }
     }
   });
+}
+
+// ==========================================
+// FUNGSI JAVASCRIPT UNTUK TOMBOL RESET
+// ==========================================
+function resetRiwayat() {
+    let konfirmasi = confirm("⚠️ PERINGATAN: Apakah Anda yakin ingin menghapus SELURUH data riwayat akses? Tindakan ini tidak bisa dibatalkan.");
+    
+    if (konfirmasi) {
+        fetch('/reset-log', {
+            method: 'DELETE',
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === "sukses") {
+                alert("Berhasil: " + data.pesan);
+                location.reload(); 
+            } else {
+                alert("Terjadi kegagalan sistem saat menghapus data.");
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert("Gagal terhubung ke server backend.");
+        });
+    }
 }
 </script>
 

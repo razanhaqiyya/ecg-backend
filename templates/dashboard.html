@@ -3,44 +3,47 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Dashboard ECG Smart Door Lock</title>
+<title>Dashboard PPG Smart Door Lock</title>
 <meta http-equiv="refresh" content="10">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg        : #F7F8FA;
+    --bg        : #FFF5DD;
     --surface   : #FFFFFF;
-    --border    : #E8EAF0;
-    --text-main : #1A1D23;
-    --text-sub  : #6B7280;
-    --text-hint : #9CA3AF;
-    --primary   : #2563EB;
-    --primary-lt: #EFF6FF;
-    --green     : #16A34A;
-    --green-lt  : #F0FDF4;
-    --red       : #DC2626;
-    --red-lt    : #FEF2F2;
-    --gold      : #D97706;
-    --gold-lt   : #FFFBEB;
-    --radius    : 14px;
-    --radius-sm : 8px;
-    --shadow    : 0 1px 3px rgba(0,0,0,0.07), 0 4px 16px rgba(0,0,0,0.04);
-    --shadow-sm : 0 1px 2px rgba(0,0,0,0.06);
+    --border    : #2A2E35;
+    --text-main : #2A2E35;
+    --text-sub  : #5C6270;
+    --text-hint : #A0A5B1;
+    --primary   : #38BDF8;
+    --primary-lt: #E0F2FE;
+    --green     : #4ADE80;
+    --green-lt  : #DCFCE7;
+    --red       : #F87171;
+    --red-lt    : #FEE2E2;
+    --gold      : #FACC15;
+    --gold-lt   : #FEF9C3;
+    --radius    : 24px;
+    --radius-sm : 14px;
+    --shadow    : 5px 5px 0px var(--border);
+    --shadow-sm : 3px 3px 0px var(--border);
+    --border-w  : 3px;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
-    font-family: -apple-system, 'Segoe UI', Arial, sans-serif;
+    font-family: 'Nunito', 'Comic Sans MS', sans-serif;
+    font-weight: 700;
     background: var(--bg);
     color: var(--text-main);
     min-height: 100vh;
-    font-size: 14px;
+    font-size: 15px;
   }
 
   /* ── TOPBAR ── */
   .topbar {
     background: var(--surface);
-    border-bottom: 1px solid var(--border);
+    border-bottom: 3px solid var(--border);
     padding: 0 32px;
     height: 64px;
     display: flex;
@@ -58,8 +61,8 @@
     display: flex; align-items: center; justify-content: center;
     font-size: 18px;
   }
-  .topbar h1 { font-size: 16px; font-weight: 600; color: var(--text-main); }
-  .topbar .sub { font-size: 12px; color: var(--text-sub); margin-top: 1px; }
+  .topbar h1 { font-size: 16px; font-weight: 800; color: var(--text-main); }
+  .topbar .sub { font-size: 13px; color: var(--text-sub); margin-top: 1px; }
   .topbar-right { display: flex; align-items: center; gap: 12px; }
   .badge-online {
     display: flex; align-items: center; gap: 6px;
@@ -67,8 +70,8 @@
     color: var(--green);
     padding: 5px 12px;
     border-radius: 20px;
-    font-size: 12px;
-    font-weight: 600;
+    font-size: 13px;
+    font-weight: 800;
   }
   .badge-online::before {
     content: '';
@@ -85,7 +88,7 @@
     font-size: 11px;
     color: var(--text-hint);
     background: var(--bg);
-    border: 1px solid var(--border);
+    border: 3px solid var(--border);
     padding: 4px 10px;
     border-radius: 20px;
   }
@@ -101,7 +104,7 @@
 
   .stat {
     background: var(--surface);
-    border: 1px solid var(--border);
+    border: 3px solid var(--border);
     border-radius: var(--radius);
     padding: 20px 22px;
     box-shadow: var(--shadow-sm);
@@ -142,7 +145,7 @@
   .c-red   { color: var(--red); }
   .c-gold  { color: var(--gold); }
 
-  .stat-label { font-size: 12px; color: var(--text-sub); font-weight: 500; }
+  .stat-label { font-size: 13px; color: var(--text-sub); font-weight: 800; }
 
   /* ── GRID 2 COL ── */
   .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
@@ -150,20 +153,20 @@
   /* ── CARD ── */
   .card {
     background: var(--surface);
-    border: 1px solid var(--border);
+    border: 3px solid var(--border);
     border-radius: var(--radius);
     box-shadow: var(--shadow-sm);
     overflow: hidden;
   }
   .card-header {
     padding: 18px 22px 14px;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 3px solid var(--border);
     display: flex;
     align-items: center;
     justify-content: space-between;
   }
-  .card-title { font-size: 14px; font-weight: 600; }
-  .card-sub   { font-size: 12px; color: var(--text-sub); margin-top: 2px; }
+  .card-title { font-size: 15px; font-weight: 800; }
+  .card-sub   { font-size: 13px; color: var(--text-sub); margin-top: 2px; }
   .card-body  { padding: 18px 22px; }
 
   /* ── CHART ── */
@@ -176,18 +179,18 @@
     padding: 11px 16px;
     text-align: left;
     font-size: 11px;
-    font-weight: 600;
+    font-weight: 800;
     color: var(--text-sub);
     text-transform: uppercase;
     letter-spacing: 0.6px;
     background: var(--bg);
-    border-bottom: 1px solid var(--border);
+    border-bottom: 3px solid var(--border);
     white-space: nowrap;
   }
   tbody td {
     padding: 13px 16px;
     font-size: 13px;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 3px solid var(--border);
     vertical-align: middle;
   }
   tbody tr:last-child td { border-bottom: none; }
@@ -199,7 +202,7 @@
     padding: 4px 10px;
     border-radius: 20px;
     font-size: 11px;
-    font-weight: 600;
+    font-weight: 800;
     white-space: nowrap;
   }
   .pill-buka  { background: var(--green-lt); color: var(--green); }
@@ -217,7 +220,7 @@
     max-width: 80px;
   }
   .conf-fill { height: 100%; border-radius: 3px; }
-  .conf-num  { font-size: 12px; color: var(--text-sub); min-width: 36px; }
+  .conf-num  { font-size: 13px; color: var(--text-sub); min-width: 36px; }
 
   /* ── EMPTY STATE ── */
   .empty-state {
@@ -249,12 +252,12 @@
     justify-content: space-between;
     margin-bottom: 14px;
   }
-  .section-hdr h2 { font-size: 16px; font-weight: 600; }
+  .section-hdr h2 { font-size: 16px; font-weight: 800; }
   .count-badge {
     background: var(--primary-lt);
     color: var(--primary);
     font-size: 11px;
-    font-weight: 600;
+    font-weight: 800;
     padding: 3px 10px;
     border-radius: 20px;
   }
@@ -263,11 +266,11 @@
   .recent-item {
     display: flex; align-items: center;
     gap: 12px; padding: 11px 0;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 3px solid var(--border);
   }
   .recent-item:last-child { border-bottom: none; }
   .recent-time { font-size: 11px; color: var(--text-hint); min-width: 70px; }
-  .recent-name { font-size: 13px; font-weight: 500; flex: 1; }
+  .recent-name { font-size: 13px; font-weight: 800; flex: 1; }
 
   /* ── RESPONSIVE ── */
   @media (max-width: 900px) {
@@ -278,7 +281,16 @@
   @media (max-width: 500px) {
     .stats { grid-template-columns: 1fr 1fr; }
   }
+
+  .card:hover { transform: translateY(-4px); box-shadow: 7px 7px 0px var(--border); transition: 0.2s; }
+  .card { transition: 0.2s; }
+  th { background: #FEF9C3 !important; font-weight: 900 !important; font-size: 16px; border-bottom: 3px solid var(--border) !important; color: var(--text-main) !important; }
+  tbody tr { transition: 0.2s; }
+  tbody tr:hover { background: #E0F2FE; transform: scale(1.01); }
+  .badge { border: 2px solid var(--border); box-shadow: 2px 2px 0px var(--border); font-weight: 800; }
+  .logo-box { border: 3px solid var(--border); box-shadow: 3px 3px 0px var(--border); }
 </style>
+
 </head>
 <body>
 
@@ -286,7 +298,7 @@
 <header class="topbar">
   <div class="topbar-left">
     <div>
-      <div class="topbar h1" style="font-size:15px;font-weight:600">ECG Authentication</div>
+      <div class="topbar h1" style="font-size:15px;font-weight:600">PPG Authentication</div>
     </div>
   </div>
   <div class="topbar-right">
@@ -299,7 +311,7 @@
 <main class="main">
 
   <div class="page-title">Dashboard Monitoring</div>
-  <div class="page-sub">Sistem Autentikasi Biometrik ECG</div>
+  <div class="page-sub">Sistem Autentikasi Biometrik PPG</div>
 
   <!-- STAT CARDS -->
   <div class="stats">
@@ -525,11 +537,11 @@ if (totalVal === 0) {
       datasets: [{
         data: [diterimaVal, ditolakVal],
         backgroundColor: [
-          'rgba(22, 163, 74, 0.85)',
-          'rgba(220, 38, 38, 0.85)',
+          '#4ADE80',
+          '#F87171',
         ],
         borderColor: ['#fff', '#fff'],
-        borderWidth: 3,
+        borderWidth: 4, borderColor: '#2A2E35',
         hoverOffset: 6,
       }]
     },

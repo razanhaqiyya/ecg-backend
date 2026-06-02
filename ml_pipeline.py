@@ -12,7 +12,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_EXTRACTOR_PATH = os.path.join(BASE_DIR, 'models', 'vgg16_bilstm_extractor.h5')
 MODEL_CLASSIFIER_PATH = os.path.join(BASE_DIR, 'models', 'lightgbm_classifier.pkl')
 
-LABEL_MAPPING = {0: 'Unauthorized', 1: 'Razan', 2: 'Danar', 3: 'Zidane', 4: 'Yoga'}
+LABEL_MAPPING = {0: 'Unauthorized', 1: 'Razan', 2: 'Danar', 3:  'Yoga'}
 
 MODEL_READY = False
 feature_extractor = None
